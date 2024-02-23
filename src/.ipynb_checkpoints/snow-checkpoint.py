@@ -386,7 +386,7 @@ class SnowModel:
                 self.Qw[0] = Rf/rho_wat
                 Roff = 0
                 for k in range(self.Nsnow):
-                    self.ksat[k] = 0.31*(self.rho_wat*self.g/self.mu_wat) * self.Rgrn[k]**2 * exp(-7.8 * self.Sice[k]/(rho_wat * self.Dsnw[k]))
+                    self.ksat[k] = 0.31*(self.rho_wat*self.g/self.mu_wat) * self.Rgrn[k]**2 * np.exp(-7.8 * self.Sice[k]/(rho_wat * self.Dsnw[k]))
                     self.phi[k] = 1 - self.Sice[k]/(self.rho_ice*self.Dsnw[k])
                     self.thetar[k] = self.Wirr*self.phi[k]
                     self.thetaw[k] = self.Sliq[k]/(rho_wat*self.Dsnw[k])

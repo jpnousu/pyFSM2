@@ -49,7 +49,7 @@ class Layers:
         self.Dzsnow = np.array([0.1, 0.2, 0.4]) # Minimum snow layer thicknesses (m)
         self.Dzsoil = np.array([0.1, 0.2, 0.4])  # Soil layer thicknesses (m)
         self.fvg1 = []  # Fraction of vegetation in the upper canopy layer
-        self.zsub = []  # Subcanopy wind speed diagnostic height (m)
+        self.zsub = 2.0  # Subcanopy wind speed diagnostic height (m)
 
 # Parameters
 class Parameters:

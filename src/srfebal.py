@@ -251,7 +251,7 @@ class SrfEbal:
                         dGs = 0
                         dHs = 0
                         dTs = self.Tm - self.Tsrf
-
+                
                 # Update surface temperature and fluxes
                 Esrf = Esrf + dEs
                 Gsrf = Gsrf + dGs
@@ -261,16 +261,19 @@ class SrfEbal:
                 ebal = SWsrf + LW - self.sb * self.Tsrf**4 - Gsrf - Hsrf - Lsrf * Esrf - self.Lf * Melt
                 LWout = self.sb * self.Tsrf**4
                 LWsub = LW
+                print('self.zsub', self.zsub)
+                print('rL', rL)
+                print('self.z0g', self.z0g)
                 Usub = (ustar / self.vkman) * (np.log(self.zsub/self.z0g) - self.psim(self.zsub,rL) + self.psim(self.z0g,rL))
 
                 if (ne > 4) & (abs(ebal) < 0.01):
                     break
-
+        '''
         else: # forest # NOTE BELOW THIS VARIABLES NEED TO BE CHECKED
             rL = 0
             usd = vkman * Ua / np.log((self.zU1-d)/self.z0v)
             Kh = vkman * usd * (self.vegh - d)
-            rd = np.log((zT1-d)/(vegh-d)) / (vkman * usd) + vegh * (np.exp(wcan*(1 - zh[0])/self.vegh) - 1))/(wcan*Kh)
+            rd = np.log((zT1-d)/(vegh-d)) / (vkman * usd) + vegh * (np.exp(wcan*(1 - zh[0])/self.vegh) - 1)/(wcan*Kh)
             uso = vkman * Ua / np.log(self.zU1/self.z0g)
             ro = np.log(self.zT1/self.zh[0]) / (vkman * uso)
             ga = fveg/rd + (1 - fveg)/ro
@@ -279,7 +282,7 @@ class SrfEbal:
                 if EXCHNG == 1:
                     ustar = fveg * usd + (1 - fveg) * uso
                     if (ne<10): 
-                        B = ga * (Tcan[0]) - Ta)
+                        B = ga * (Tcan[0] - Ta)
                         rL = -vkman * B / (Ta * ustar**3)
                         rL = max(min(rL,2.),-2.)
                         usd = vkman * Ua / (np.log((self.zu1-d)/self.z0v) - self.psim(self.zU1-d,rL) + self.psim(self.z0v,rL))
@@ -287,24 +290,24 @@ class SrfEbal:
                             Kh = vkman * usd * (vegh - d) / (1 + 5 * (vegh - d) * rL)
                         else:
                             Kh = vkman * usd * (vegh - d) * sqrt(1 - 16 * (vegh - d) * rL)
-                    rd = (np.log((self.zT1-d)/(self.vegh-d)) - self.psih(self.zT1-d,rL) + self.psih(self.vegh-d,rL))/(vkman*usd) + \ 
-                    self.vegh * (np.exp(wcan*(1 - self.zh[0])/self.vegh) - 1))/(wcan*Kh)
+                    rd = (np.log((self.zT1-d)/(self.vegh-d)) - self.psih(self.zT1-d,rL) + self.psih(self.vegh-d,rL))/(vkman*usd) \
+                            + self.vegh * (np.exp(wcan*(1 - self.zh[0])/self.vegh) - 1)/(wcan*Kh)
                     uso = vkman * Ua / (np.log(self.zU1/self.z0g) - self.psim(self.zU1,rL) + self.psim(self.z0g,rL))
-                    ro = (np.log(self.zT1/self.zh[0]) - self.psih(self.zT1,rL) + self.psih(self.zh[0]),rL))/(vkman*uso)
+                    ro = (np.log(self.zT1/self.zh[0]) - self.psih(self.zT1,rL) + self.psih(self.zh[0]),rL)/(vkman*uso)
                     ga = self.fveg / rd + (1 - fveg)/ro # + 2/(rho*cp)
                 Uh = (usd / vkman) * (np.log((vegh-d)/z0v) - self.psim(self.vegh-d,rl) + self.psim(self.z0v,rl))
                 for k in range(self.Ncnpy):
                     Uc = fveg * np.exp(wcan*(zh[k]/vegh - 1))* Uh  +  \
                     (1 - fveg) * (uso / vkman) * (np.log(zh[k]/z0g) - self.psim(self.zh[k],rL) + self.psim(self.z0g,rL))
                     gv[k] = sqrt(Uc)*lveg[k]/leaf
-                if CANMOD == 2:
-                    rd = vegh * np.exp(wcan) * (np.exp(-wcan*zh[1])/vegh) - np.exp(-wcan*zh[0])/vegh))/(wcan*Kh)
-                    ro = (np.log(zh[0])/zh[1]) - self.psih(self.zh[1],rL) + self.psih(self.zh[2],rL))/(vkman*uso)
-                    gc = fveg/rd + (1 - fveg)/ro
+                #if CANMOD == 2:
+                #    rd = vegh * np.exp(wcan) * (np.exp(-wcan*zh[1])/vegh) - np.exp(-wcan*zh[0]/vegh)/(wcan*Kh)
+                #    ro = (np.log(zh[0])/zh[1]) - self.psih(self.zh[1],rL) + self.psih(self.zh[2],rL))/(vkman*uso)
+                #    gc = fveg/rd + (1 - fveg)/ro
                 k = Ncnpy
                 Uc = np.exp(wcan*(hbas/vegh - 1)) * Uh
-                rd = np.log(hbas/z0g) * np.log(hbas/z0h) / (vkman**2 * Uc) + \ 
-                vegh * np.exp(wcan) * (np.exp(-wcan*hbas/vegh) - np.exp(-wcan * zh[k])) / (wcan * Kh)
+                rd = np.log(hbas/z0g) * np.log(hbas/z0h) / (vkman**2 * Uc) \
+                        + vegh * np.exp(wcan) * (np.exp(-wcan*hbas/vegh) - np.exp(-wcan * zh[k])) / (wcan * Kh)
                 ro = (np.log(zh[k] / z0h) - self.psih(self.zh[k],rL) + self.psih(self.z0h,rL)) / (vkman * uso)
                 gs = fveg / rd + (1 - fveg) / ro
 
@@ -361,7 +364,7 @@ class SrfEbal:
                     J[1,0] = 4 * (1 - tdif[0]) * sb * Tsrf**3
                     J[1,1] = Lcan[0] * rho * wveg[0] * gv[0]
                     J[1,2] = rho * cp * gv[0]
-                    J[1,3] = -rho * gv[0] * (cp + Lcan[0] * Dveg[0] * wveg[0]) \ 
+                    J[1,3] = -rho * gv[0] * (cp + Lcan[0] * Dveg[0] * wveg[0]) \
                             -8 * (1 - tdif[0]) * sb * Tveg[0]**3 - cveg[0] / dt
                     J[2,0] = -gs
                     J[2,1] = 0
@@ -376,287 +379,107 @@ class SrfEbal:
                                 cveg[0] * (Tveg[0] - Tveg0[0]) / dt)
                     f[3]   = -(H - Hveg[0] - Hsrf) / (rho * cp)
                     f[4]   = -(E - Eveg[0] - Esrf) / rho
-                    call LUDCMP(4,J,f,x)
-                    dTs = x(1)
-                    dQc(1) = x(2)
-                    dTc(1) = x(3)
-                    dTv(1) = x(4)
-                    dEs = rho*wsrf*gs*(Dsrf*dTs - dQc(1))
-                    dEv(1) = rho*wveg(1)*gv(1)*(Dveg(1)*dTv(1) - dQc(1))
-                    dGs = 2*ks1*dTs/Ds1
-                    dHs = rho*cp*gs*(dTs - dTc(1))
-                    dHv(1) = rho*cp*gv(1)*(dTv(1) - dTc(1))
+                    x = self.ludcmp(4, J, f)
+                    dTs = x[0]
+                    dQc[0] = x[1]
+                    dTc[0] = x[2]
+                    dTv[0] = x[3]
+                    dEs = rho * wsrf * gs * (Dsrf * dTs - dQc[0])
+                    dEv[0] = rho * wveg[0] * gv[0] * (Dveg[0] * dTv[0] - dQc[0])
+                    dGs = 2 * ks1 * dTs / Ds1
+                    dHs = rho * cp * gs * (dTs - dTc[0])
+                    dHv[0] = rho * cp * gv[0] * (dTv[0] - dTc[0])
 
                     # Surface melting
-                    if (Tsrf + dTs > Tm .and. Sice(1) > 0) then
-    Melt = sum(Sice) / dt
-    f(1) = f(1) + Lf*Melt
-    call LUDCMP(4,J,f,x)
-    dTs = x(1)
-    dQc(1) = x(2)
-    dTc(1) = x(3)
-    dTv(1) = x(4)
-    dEs = rho*wsrf*gs*(Dsrf*dTs - dQc(1))
-    dEv(1) = rho*wveg(1)*gv(1)*(Dveg(1)*dTv(1) - dQc(1))
-    dGs = 2*ks1*dTs/Ds1
-    dHs = rho*cp*gs*(dTs - dTc(1))
-    dHv(1) = rho*cp*gv(1)*(dTv(1) - dTc(1))
-    if (Tsrf + dTs < Tm) then
-      call QSAT(Ps,Tm,Qsrf)
-      Esrf = rho*wsrf*gs*(Qsrf - Qcan(1))
-      Gsrf = 2*ks1*(Tm - Ts1)/Ds1
-      Hsrf = rho*cp*gs*(Tm - Tcan(1))
-      Rsrf = SWsrf + tdif(1)*LW - sb*Tm**4 + (1 - tdif(1))*sb*Tveg(1)**4
-      Rveg(1) = SWveg(1) + (1 - tdif(1))*(LW + sb*Tm**4 - 2*sb*Tveg(1)**4) 
-      J(1,1) = -1
-      J(2,1) = 0
-      J(3,1) = 0
-      J(4,1) = 0
-      f(1)   = -(Rsrf - Gsrf - Hsrf - Lsrf*Esrf)
-      f(2)   = -(Rveg(1) - Hveg(1) - Lcan(1)*Eveg(1) -  &
-                 cveg(1)*(Tveg(1) - Tveg0(1))/dt)
-      f(3)   = -(H - Hveg(1) - Hsrf)/(rho*cp)
-      f(4)   = -(E - Eveg(1) - Esrf)/rho
-      call LUDCMP(4,J,f,x)
-      Melt = x(1)/Lf
-      dQc(1) = x(2)
-      dTc(1) = x(3)
-      dTv(1) = x(4)
-      dTs = Tm - Tsrf
-      dEs = 0
-      dEv(1) = rho*wveg(1)*gv(1)*(Dveg(1)*dTv(1) - dQc(1))
-      dGs = 0
-      dHs = 0
-      dHv(1) = rho*cp*gv(1)*(dTv(1) - dTc(1))
-    end if
-  end if
-  LWout = (1 - tdif(1))*sb*Tveg(1)**4 + tdif(1)*sb*Tsrf**4
-  LWsub = tdif(1)*LW + (1 - tdif(1))*sb*Tveg(1)**4 
-#endif
+                    if (Tsrf + dTs > self.Tm) & (Sice[0] > 0):
+                        Melt = sum(Sice) / dt
+                        f[0] += Lf*Melt
+                        x = self.ludcmp(4, J, f)
+                        dTs = x[0]
+                        dQc[0] = x[1]
+                        dTc[0] = x[2]
+                        dTv[0] = x[3]
+                        dEs = rho * wsrf * gs * (Dsrf * dTs - dQc[0])
+                        dEv[0] = rho * wveg[0] * gv[0] * (Dveg[0] * dTv[0] - dQc[0])
+                        dGs = 2 * ks1 * dTs / Ds1
+                        dHs = rho * cp * gs * (dTs - dTc[0])
+                        dHv[0] = rho * cp * gv[0] * (dTv[0] - dTc[0])
+                        if (Tsrf + dTs < self.Tm):
+                            Qsrf = self.qsat(Ps=Ps, T=self.Tm)
+                            Esrf = rho * wsrf * gs * (Qsrf - Qcan[0])
+                            Gsrf = 2 * ks1 * (Tm - Ts1) / Ds1
+                            Hsrf = rho * cp * gs * (Tm - Tcan[0])
+                            Rsrf = SWsrf + tdif[0] * LW - sb * self.Tm**4 + (1 - tdif[0]) * sb * Tveg[0]**4
+                            Rveg[0] = SWveg[0] + (1 - tdif[0]) * (LW + sb * self.Tm**4 - 2 * sb * Tveg[0]**4) 
+                            J[0,0] = -1
+                            J[1,0] = 0
+                            J[2,0] = 0
+                            J[3,0] = 0
+                            f[0]   = -(Rsrf - Gsrf - Hsrf - Lsrf * Esrf)
+                            f[1]   = -(Rveg[0] - Hveg[0] - Lcan[0] * Eveg[0] - cveg[0] * (Tveg[0] - Tveg0[0]) / dt)
+                            f[2]   = -(H - Hveg[0] - Hsrf) / (rho * cp)
+                            f[3]   = -(E - Eveg[0] - Esrf) / rho
+                            x = self.ludcmp(4, J, f)
+                            Melt = x[0] / Lf
+                            dQc[0] = x[1]
+                            dTc[0] = x[2]
+                            dTv[0] = x[3]
+                            dTs = Tm - Tsrf
+                            dEs = 0
+                            dEv[0] = rho * wveg[0] * gv[0] * (Dveg[0] * dTv[0] - dQc[0])
+                            dGs = 0
+                            dHs = 0
+                            dHv[0] = rho * cp * gv[0] * (dTv[0] - dTc[0])
+                            
+                    LWout = (1 - tdif[0]) * sb * Tveg[0]**4 + tdif[0] * sb * Tsrf**4
+                    LWsub = tdif[0] * LW + (1 - tdif[0]) * sb * Tveg[0]**4 
 
-'''
-#if CANMOD == 2
-! 2-layer canopy model
+                # Update vegetation temperatures and fluxes
+                Eveg[:] = Eveg[:] + dEv[:]
+                Hveg[:] = Hveg[:] + dHv[:]
+                Qcan[:] = Qcan[:] + dQc[:]
+                Tcan[:] = Tcan[:] + dTc[:]
+                Tveg[:] = Tveg[:] + dTv[:]
 
-  ! Explicit fluxes
-  E = rho*ga*(Qcan(1) - Qa)
-  Ecan = rho*gc*(Qcan(2) - Qcan(1))
-  Esrf = rho*wsrf*gs*(Qsrf - Qcan(2))
-  Eveg(1) = rho*wveg(1)*gv(1)*(Qveg(1) - Qcan(1))
-  Eveg(2) = rho*wveg(2)*gv(2)*(Qveg(2) - Qcan(2))
-  Gsrf = 2*ks1*(Tsrf - Ts1)/Ds1
-  H = rho*cp*ga*(Tcan(1) - Ta)
-  Hcan = rho*cp*gc*(Tcan(2) - Tcan(1))
-  Hsrf = rho*cp*gs*(Tsrf - Tcan(2))
-  Hveg(1) = rho*cp*gv(1)*(Tveg(1) - Tcan(1))
-  Hveg(2) = rho*cp*gv(2)*(Tveg(2) - Tcan(2))
-  Melt = 0
-  Rsrf = SWsrf + tdif(1)*tdif(2)*LW +              &
-         (1 - tdif(1))*tdif(2)*sb*Tveg(1)**4 +     &
-         (1 - tdif(2))*sb*Tveg(2)**4 - sb*Tsrf**4 
-  Rveg(1) = SWveg(1) + (1 - tdif(1))*(LW - 2*sb*Tveg(1)**4    & 
-            + (1 - tdif(2))*sb*Tveg(2)**4 + tdif(2)*sb*Tsrf**4) 
-  Rveg(2) = SWveg(2) +                                               & 
-            (1 - tdif(2))*(tdif(1)*LW + (1 - tdif(1))*sb*Tveg(1)**4  & 
-               - 2*sb*Tveg(2)**4 + sb*Tsrf**4) 
+                # Update surface temperature and fluxes
+                Esrf = Esrf + dEs
+                Gsrf = Gsrf + dGs
+                Hsrf = Hsrf + dHs
+                Tsrf = Tsrf + dTs
+                # Diagnostics
+                ebal = SWsrf + LWsub - sb*Tsrf**4 - Gsrf - Hsrf - Lsrf * Esrf - Lf * Melt
+                Uc = np.exp(wcan*(hbas/vegh - 1)) * Uh
+                Usub = fveg * Uc * np.log(zsub/z0g) / np.log(hbas/z0g) \
+                        + (1 - fveg) * Ua * (np.log(zsub/z0g) - self.psim(self.zsub,rL) + self.psim(self.z0g,rL)) \
+                            / (np.log(self.zU/self.z0g) - self.psim(self.zU,rL) + self.psim(self.z0g,rL))
 
-! Surface energy balance increments without melt
-  J(1,1) = - rho*gs*(cp + Lsrf*Dsrf*wsrf) - 4*sb*Tsrf**3 - 2*ks1/Ds1
-  J(1,2) = 0
-  J(1,3) = 0
-  J(1,4) = 4*(1 - tdif(1))*tdif(2)*sb*Tveg(1)**3
-  J(1,5) = Lsrf*rho*wsrf*gs
-  J(1,6) = rho*cp*gs
-  J(1,7) = 4*(1 - tdif(2))*sb*Tveg(2)**3
-  J(2,1) = 4*(1 - tdif(1))*tdif(2)*sb*Tveg(2)**3 
-  J(2,2) = Lcan(1)*rho*wveg(1)*gv(1)
-  J(2,3) = rho*cp*gv(1)
-  J(2,4) = - rho*gv(1)*(cp + Lcan(1)*Dveg(1)*wveg(1))    & 
-           - 8*(1 - tdif(1))*sb*Tveg(1)**3 - cveg(1)/dt
-  J(2,5) = 0
-  J(2,6) = 0
-  J(2,7) = 4*(1 - tdif(1))*(1 - tdif(2))*sb*Tveg(2)**3
-  J(3,1) = 4*(1 - tdif(2))*sb*Tsrf**3 
-  J(3,2) = 0
-  J(3,3) = 0
-  J(3,4) = 4*(1 - tdif(1))*(1 - tdif(2))*sb*Tveg(1)**3
-  J(3,5) = Lcan(2)*rho*wveg(2)*gv(2)
-  J(3,6) = rho*cp*gv(2)
-  J(3,7) = - rho*gv(2)*(cp + Lcan(2)*Dveg(2)*wveg(2))    &
-           - 8*(1 - tdif(2))*sb*Tveg(2)**3 - cveg(2)/dt
-  J(4,1) = 0
-  J(4,2) = 0
-  J(4,3) = ga + gc + gv(1)
-  J(4,4) = -gv(1)
-  J(4,5) = 0
-  J(4,6) = -gc
-  J(4,7) = 0
-  J(5,1) = -gs
-  J(5,2) = 0
-  J(5,3) = -gc
-  J(5,4) = 0
-  J(5,5) = 0
-  J(5,6) = gc + gs + gv(2)
-  J(5,7) = -gv(2)
-  J(6,1) = 0
-  J(6,2) = ga + gc + wveg(1)*gv(1)
-  J(6,3) = 0
-  J(6,4) = -Dveg(1)*wveg(1)*gv(1)
-  J(6,5) = -gc
-  J(6,6) = 0
-  J(6,7) = 0
-  J(7,1) = -Dsrf*wsrf*gs
-  J(7,2) = -gc
-  J(7,3) = 0
-  J(7,4) = 0
-  J(7,5) = gc + wsrf*gs + wveg(2)*gv(2)
-  J(7,6) = 0
-  J(7,7) = -Dveg(2)*wveg(2)*gv(2)
-  f(1)   = -(Rsrf - Gsrf - Hsrf - Lsrf*Esrf)
-  f(2)   = -(Rveg(1) - Hveg(1) - Lcan(1)*Eveg(1) -  & 
-             cveg(1)*(Tveg(1) - Tveg0(1))/dt)
-  f(3)   = -(Rveg(2) - Hveg(2) - Lcan(2)*Eveg(2) -  &
-             cveg(2)*(Tveg(2) - Tveg0(2))/dt)
-  f(4)   = -(H - Hcan - Hveg(1))/(rho*cp)
-  f(5)   = -(Hcan - Hsrf - Hveg(2))/(rho*cp)
-  f(6)   = -(E - Ecan - Eveg(1))/rho
-  f(7)   = -(Ecan - Esrf - Eveg(2))/rho
-  call LUDCMP(7,J,f,x)
-  dTs    = x(1)
-  dQc(1) = x(2)
-  dTc(1) = x(3)
-  dTv(1) = x(4)
-  dQc(2) = x(5)
-  dTc(2) = x(6)
-  dTv(2) = x(7)
-  dEs = rho*wsrf*gs*(Dsrf*dTs - dQc(2))
-  dEv(1) = rho*wveg(1)*gv(1)*(Dveg(1)*dTv(1) - dQc(1))
-  dEv(2) = rho*wveg(2)*gv(2)*(Dveg(2)*dTv(2) - dQc(2))
-  dGs = 2*ks1*dTs/Ds1
-  dHs = rho*cp*gs*(dTs - dTc(2))
-  dHv(1) = rho*cp*gv(1)*(dTv(1) - dTc(1))
-  dHv(2) = rho*cp*gv(2)*(dTv(2) - dTc(2))
+                if (ne>4) & (abs(ebal)<0.01):
+                    break
+            '''
+        # Sublimation limited by available snow
+        subl = 0
+        Ssub = sum(Sice[:]) - Melt * dt
+        if (Ssub > 0) | (self.Tsrf < self.Tm):
+            Esrf = min(Esrf, Ssub / dt)
+            subl = Esrf
 
-  ! Surface melting
-  if (Tsrf + dTs > Tm .and. Sice(1) > 0) then
-    Melt = sum(Sice)/dt
-    f(1) = f(1) + Lf*Melt
-    call LUDCMP(7,J,f,x)
-    dTs    = x(1)
-    dQc(1) = x(2)
-    dTc(1) = x(3)
-    dTv(1) = x(4)
-    dQc(2) = x(5)
-    dTc(2) = x(6)
-    dTv(2) = x(7)
-    dEs = rho*wsrf*gs*(Dsrf*dTs - dQc(2))
-    dEv(1) = rho*wveg(1)*gv(1)*(Dveg(1)*dTv(1) - dQc(1))
-    dEv(2) = rho*wveg(2)*gv(2)*(Dveg(2)*dTv(2) - dQc(2))
-    dGs = 2*ks1*dTs/Ds1
-    dHs = rho*cp*gs*(dTs - dTc(2))
-    dHv(1) = rho*cp*gv(1)*(dTv(1) - dTc(1))
-    dHv(2) = rho*cp*gv(2)*(dTv(2) - dTc(2))
-    if (Tsrf + dTs < Tm) then
-      call QSAT(Ps,Tm,Qsrf)
-      Esrf = rho*wsrf*gs*(Qsrf - Qcan(2))
-      Hsrf = rho*cp*gs*(Tm - Tcan(2))
-      Rsrf = Rsrf + sb*Tsrf**4 - sb*Tm**4
-      Rveg(1) = Rveg(1) + (1 - tdif(1))*tdif(2)*sb*(Tm**4 - Tsrf**4) 
-      Rveg(2) = Rveg(2) + (1 - tdif(2))*sb*(Tm**4 - Tsrf**4)
-      J(1,1) = -1
-      J(2,1) = 0
-      J(3,1) = 0
-      J(4,1) = 0
-      J(5,1) = 0
-      J(6,1) = 0
-      J(7,1) = 0
-      f(1) = -(Rsrf - Gsrf - Hsrf - Lsrf*Esrf)
-      f(2) = -(Rveg(1) - Hveg(1) - Lcan(1)*Eveg(1) -  & 
-               cveg(1)*(Tveg(1) - Tveg0(1))/dt)
-      f(3) = -(Rveg(2) - Hveg(2) - Lcan(2)*Eveg(2) -  &
-               cveg(2)*(Tveg(2) - Tveg0(2))/dt)
-      f(4) = -(H - Hcan - Hveg(1))/(rho*cp)
-      f(5) = -(Hcan - Hsrf - Hveg(2))/(rho*cp)
-      f(6) = -(E - Ecan - Eveg(1))/rho
-      f(7) = -(Ecan - Esrf - Eveg(2))/rho
-      call LUDCMP(7,J,f,x)
-      Melt = x(1)/Lf
-      dQc(1) = x(2)
-      dTc(1) = x(3)
-      dTv(1) = x(4)
-      dQc(2) = x(5)
-      dTc(2) = x(6)
-      dTv(2) = x(7)
-      dTs = Tm - Tsrf
-      dEs = 0
-      dEv(1) = rho*wveg(1)*gv(1)*(Dveg(1)*dTv(1) - dQc(1))
-      dEv(2) = rho*wveg(2)*gv(2)*(Dveg(2)*dTv(2) - dQc(2))
-      dGs = 0
-      dHs = 0
-      dHv(1) = rho*cp*gv(1)*(dTv(1) - dTc(1))
-      dHv(2) = rho*cp*gv(2)*(dTv(2) - dTc(2))
-    end if
-  end if
-  LWout = (1 - tdif(1))*sb*Tveg(1)**4 +          &
-          (1 - tdif(2))*tdif(1)*sb*Tveg(1)**4 +  &
-          tdif(1)*tdif(2)*sb*Tsrf**4
-  LWsub = tdif(1)*tdif(2)*LW +                   &
-          (1 - tdif(1))*tdif(2)*sb*Tveg(1)**4 +  &
-          (1 - tdif(2))*sb*Tveg(2)**4
-#endif
-'''
-'''
-  ! Update vegetation temperatures and fluxes
-  Eveg(:) = Eveg(:) + dEv(:)
-  Hveg(:) = Hveg(:) + dHv(:)
-  Qcan(:) = Qcan(:) + dQc(:)
-  Tcan(:) = Tcan(:) + dTc(:)
-  Tveg(:) = Tveg(:) + dTv(:)
-
-  ! Update surface temperature and fluxes
-  Esrf = Esrf + dEs
-  Gsrf = Gsrf + dGs
-  Hsrf = Hsrf + dHs
-  Tsrf = Tsrf + dTs
-  ! Diagnostics
-  ebal = SWsrf + LWsub - sb*Tsrf**4 - Gsrf - Hsrf - Lsrf*Esrf - Lf*Melt
-  Uc = exp(wcan*(hbas/vegh - 1))*Uh
-  Usub = fveg*Uc*log(zsub/z0g)/log(hbas/z0g) +  &
-         (1 - fveg)*Ua*(log(zsub/z0g) - psim(zsub,rL) + psim(z0g,rL)) / &
-                       (log(zU/z0g) - psim(zU,rL) + psim(z0g,rL))
-
-if (ne>4 .and. abs(ebal)<0.01) exit
-end do
-end if  ! forest
-!print*,ne,ebal
-!write(31,*) SWsrf,LWsub - sb*Tsrf**4,Gsrf,Hsrf,Lsrf*Esrf,Lf*Melt
-
-! Sublimation limited by available snow
-subl = 0
-Ssub = sum(Sice(:)) - Melt*dt
-if (Ssub > 0 .or. Tsrf<Tm) then
-  Esrf = min(Esrf, Ssub/dt)
-  subl = Esrf
-end if
-if (VAI>0) then
-  do k = 1, Ncnpy
-    if (Sveg(k)>0 .or. Tveg(k)<Tm) then
-      Eveg(k) = min(Eveg(k), Sveg(k)/dt)
-      subl = subl + Eveg(k)
-    end if
-  end do
-end if                
-'''
-                # Fluxes to the atmosphere
-                E = Esrf + np.sum(self.Eveg[:])
-                H = Hsrf + np.sum(self.Hveg[:])
-                LE = Lsrf * Esrf #+ sum(Lcan[:]*self.Eveg[:])
+        if (VAI > 0):
+            for k in range(Ncnpy):
+                if (Sveg[k] > 0) | (Tveg[k] < self.Tm):
+                    Eveg[k] = min(Eveg[k], Sveg[k] / dt)
+                    subl = subl + Eveg[k]
                 
-                Tsrf = self.Tsrf.copy()
-                Eveg = self.Eveg.copy()
-                Hveg = self.Hveg.copy()
+        # Fluxes to the atmosphere
+        E = Esrf + np.sum(self.Eveg[:])
+        H = Hsrf + np.sum(self.Hveg[:])
+        LE = Lsrf * Esrf #+ sum(Lcan[:]*self.Eveg[:])
+                
+        Tsrf = self.Tsrf.copy()
+        Eveg = self.Eveg.copy()
+        Hveg = self.Hveg.copy()
                     
         return Esrf, Gsrf, H, LE, LWout, LWsub, Melt, subl, Usub, Eveg, Tsrf
+
 
 
     def qsat(self, Ps, T):
@@ -672,14 +495,108 @@ end if
 
         return Qsrf
 
+
     def psim(self, z, rL):
+        '''
+        '''
         zeta = z * rL
         psim = np.where(zeta > 0, -5 * zeta, 2 * np.log((1 + (1 - 16 * zeta) ** 0.25) / 2) + np.log((1 + (1 - 16 * zeta) ** 0.5) / 2) - 2 * np.arctan((1 - 16 * zeta) ** 0.25) + np.pi / 2)
         
         return psim
 
+
     def psih(self, z, rL):
+        '''
+        '''
         zeta = z * rL
         psih = np.where(zeta > 0, -5 * zeta, 2 * np.log((1 + (1 - 16 * zeta) ** 0.5) / 2))
         
         return psih
+
+
+    def ludcmp(N, A, b):
+        '''
+        #
+        Solve matrix equation Ax = b for x by LU decomposition
+        #
+        
+        Args:
+        N # Number of equations to solve
+        A(N,N) # Matrix
+        b(N) # RHS of matrix equation
+        Out:
+        x(N) # Solution of matrix equation
+
+        integer :: i,ii,imax,j,k,ll,indx(N)
+
+        real :: Acp(N,N),aamax,dum,sum,vv(N)
+        '''
+
+        Acp = A[:,:]
+        x = b[:]
+
+        vv = np.zeros(N)
+        indx = np.zeros(N, dtype=int)
+
+        for i in range(N):
+            aamax = 0
+            for j in range(N):
+                if (abs(Acp[i,j]) > aamax):
+                    aamax = abs(Acp[i,j])
+            vv[i] = 1/aamax
+
+        for j in range(N):
+            for i in range(j):
+                sum = Acp[i,j]
+                if (i > 1):
+                    for k in range(i):
+                        sum -= Acp[i,k] * Acp[k,j]
+                    Acp[i,j] = sum
+                    
+            aamax = 0
+            for i in range(j, N):
+                sum = Acp[i,j]
+                for k in range(j):
+                    sum -= Acp[i,k] * Acp[k,j]
+                Acp[i,j] = sum
+
+                dum = vv[i] * abs(sum)
+                if dum >= aamax:
+                    imax = i
+                    aamax = dum
+            if j != imax:
+                for k in range(N):
+                    dum = Acp[imax, k]
+                    Acp[[imax, j], :] = Acp[[j, imax], :]
+                vv[imax] = vv[j]
+
+            indx[j] = imax
+            if (Acp[j,j] == 0):
+                Acp[j,j] = 1e-20
+            if j != N-1:
+                dum = 1 / Acp[j,j]
+                for i in range(j+1, N):
+                    Acp[i,j] *= dum
+
+        ii = 0
+        for i in range(N):
+            ll = indx[i]
+            sum = x[ll]
+            x[ll] = x[i]
+
+            if ii != 0:
+                for j in range(ii, i):
+                    sum -= Acp[i,j] * x[j]
+            elif sum != 0:
+                ii = i
+
+            x[i] = sum
+
+        for i in range(N-1, 0, -1):
+            sum = x[i]
+            for j in range(i+1, N):
+                x[i] = sum / Acp[i,i]
+
+        return x
+
+
