@@ -45,7 +45,7 @@ class Layers:
     def __init__(self):    
         self.Ncnpy = 1  # Number of canopy layers
         self.Nsmax = 3  # Maximum number of snow layers
-        self.Nsoil = []  # Number of soil layers
+        self.Nsoil = 3  # Number of soil layers
         self.Dzsnow = np.array([0.1, 0.2, 0.4]) # Minimum snow layer thicknesses (m)
         self.Dzsoil = np.array([0.1, 0.2, 0.4])  # Soil layer thicknesses (m)
         self.fvg1 = []  # Fraction of vegetation in the upper canopy layer
@@ -144,7 +144,7 @@ class Parameters:
 # Soil properties
 class SoilProps:
     def __init__(self):    
-        self.b = []  # Clapp-Hornberger exponent
+        self.bch = []  # Clapp-Hornberger exponent
         self.hcap_soil = []  # Volumetric heat capacity of dry soil (J/K/m^3)
         self.hcon_soil = []  # Thermal conductivity of dry soil (W/m/K)
         self.sathh = []  # Saturated soil water pressure (m)

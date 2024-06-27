@@ -1,5 +1,7 @@
 import numpy as np
 from pyFSM2_MODULES import Constants, Layers, Parameters
+from utils import tridiag
+import matplotlib.pyplot as plt
 
 class SnowModel:
     def __init__(self):
@@ -105,6 +107,9 @@ class SnowModel:
         self.thetaw = np.zeros(self.Nsmax) # Volumetric liquid water content
         self.theta0 = np.zeros(self.Nsmax) # Liquid water content at start of timestep
         self.Qw = np.zeros(self.Nsmax+1) # Water flux at snow layer boundaruess (m/s)
+
+        # temp
+        self.hs_list = []
     
     def run_timestep(self, dt, drip, Esrf, Gsrf, ksoil, Melt, Rf, Sf, Ta, trans, Tsrf, unload, Tsoil):
         '''
@@ -122,10 +127,10 @@ class SnowModel:
 
         # Existing snowpack
         if (self.Nsnow > 0):
-            # NOTE here add computation of ksnow with snow_thermal function, then remove from args!
             ksnow = self.snow_thermal()
             # Heat conduction
             for k in range(self.Nsnow):
+                # Areal heat capacity
                 self.csnow[k] = self.Sice[k]*self.hcap_ice + self.Sliq[k]*self.hcap_wat
             if (self.Nsnow == 1):
                 self.Gs[0] = 2 / (self.Dsnw[0]/ksnow[0] + self.Dzsoil[0]/ksoil[0])
@@ -144,7 +149,7 @@ class SnowModel:
                     self.b[k] = self.csnow[k] + (self.Gs[k-1] + self.Gs[k])*dt
                     self.c[k] = - self.Gs[k]*dt
                     self.rhs[k] = self.Gs[k-1]*(self.Tsnow[k-1] - self.Tsnow[k])*dt + self.Gs[k]*(self.Tsnow[k+1] - self.Tsnow[k])*dt 
-            k = self.Nsnow-1
+            k = self.Nsnow - 1
             print('initial ksnow', ksnow)
             print('initial ksoil', ksoil)
             self.Gs[k] = 2 / (self.Dsnw[k]/ksnow[k] + self.Dzsoil[0]/ksoil[0])
@@ -152,11 +157,11 @@ class SnowModel:
             self.b[k] = self.csnow[k] + (self.Gs[k-1] + self.Gs[k])*dt
             self.c[k] = 0
             self.rhs[k] = self.Gs[k-1] * (self.Tsnow[k-1] - self.Tsnow[k])*dt + self.Gs[k]*(Tsoil[0] - self.Tsnow[k]) * dt
-            self.dTs = self.tridiag(Nvec=self.Nsnow, Nmax=self.Nsmax)
+            self.dTs = tridiag(Nvec=self.Nsnow, Nmax=self.Nsmax, a=self.a, b=self.b, c=self.c, r=self.rhs)
             
             for k in range(self.Nsnow):
                 self.Tsnow[k] = self.Tsnow[k] + self.dTs[k]
-            k = self.Nsnow-1
+            k = self.Nsnow - 1
             Gsoil = self.Gs[k] * (self.Tsnow[k] - Tsoil[0])
             
             # Convert melting ice to liquid water
@@ -311,7 +316,7 @@ class SnowModel:
                     if (dnew <= self.Dzsnow[k]) | (k == self.Nsmax):
                         self.Dsnw[k] = self.Dsnw[k] + dnew
                         break
-            self.Nsnow = k+1
+            self.Nsnow = k + 1
 
             # Fill new layers from the top downwards
             knew = 0
@@ -319,6 +324,8 @@ class SnowModel:
             for kold in range(Nold):
                 while True:
                     if (D[kold] < dnew):
+                        print('kold', kold)
+                        print('knew', knew)
                         # All snow from old layer partially fills new layer
                         self.Rgrn[knew] = self.Rgrn[knew] + S[kold] * R[kold]
                         self.Sice[knew] = self.Sice[knew] + S[kold]
@@ -432,42 +439,18 @@ class SnowModel:
         '''
 
         swe = sum(self.Sice[:]) + sum(self.Sliq[:])
-        Wflx = self.Wflx # NOTE IS THIS REASONABLE?
+
         # End if existing or new snowpack
 
         # NOTE SHOULD SAVE RESULTS BETTER!
-        return Gsoil, Roff, hs, swe, Wflx
-
-    def tridiag(self, Nvec, Nmax):
-        '''
-        Input
-        Nvec: Vector length
-        Nmax: Maximum vector length
-        a: Below-diagonal matrix elements
-        b: Diagonal matrix elements
-        c: Above-diagonal matrix elements
-        r: Matrix equation rhs
         
-        Output
-        x: Solution vector
-        '''
-
-        x = np.zeros(Nmax)
-        g = np.zeros(Nmax)
-        r = self.rhs
+        self.hs_list.append(hs)
+        #x_temp = np.arange(0, len(self.hs_list), 1)
+        #plt.plot(x_temp, self.hs_list)
+        #plt.show(x_temp, self.hs_list)
         
-        beta = self.b[0]
-        x[0] = r[0] / beta
-
-        for n in range(1, Nvec):
-            g[n] = self.c[n-1] / beta
-            beta = self.b[n] - self.a[n] * g[n]
-            x[n] = (r[n] - self.a[n] * x[n-1]) / beta
-
-        for n in range(Nvec - 2, 0, -1):
-            x[n] = x[n] - g[n + 1] * x[n + 1]
-
-        return x
+        return Gsoil, Roff, hs, swe, self.Wflx, self.Sice, self.Sliq, self.Dsnw, self.Rgrn, self.Tsnow, Tsoil, self.Nsnow
+    
 
     def snow_thermal(self):
         '''

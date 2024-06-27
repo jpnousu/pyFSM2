@@ -45,7 +45,7 @@ class Layers:
     def __init__(self):    
         self.Ncnpy = 1  # Number of canopy layers
         self.Nsmax = 3  # Maximum number of snow layers
-        self.Nsoil = []  # Number of soil layers
+        self.Nsoil = 3  # Number of soil layers
         self.Dzsnow = np.array([0.1, 0.2, 0.4]) # Minimum snow layer thicknesses (m)
         self.Dzsoil = np.array([0.1, 0.2, 0.4])  # Soil layer thicknesses (m)
         self.fvg1 = []  # Fraction of vegetation in the upper canopy layer
