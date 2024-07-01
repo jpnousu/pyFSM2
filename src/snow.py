@@ -111,14 +111,9 @@ class SnowModel:
         # temp
         self.hs_list = []
     
-    def run_timestep(self, dt, drip, Esrf, Gsrf, ksoil, Melt, Rf, Sf, Ta, trans, Tsrf, unload, Tsoil):
+    def run_timestep(self, dt, drip, Esrf, Gsrf, ksoil, Melt, Rf, Sf, Ta, trans, Tsrf, unload, Tsoil, ksnow):
         '''
         '''
-        print('initial self.Nsnow', self.Nsnow)
-        print('initial self.Dsnw', self.Dsnw)
-        print('initial self.Sice', self.Sice)
-        print('initial self.Sliq', self.Sliq)
-
 
         # No snow
         Gsoil = Gsrf.copy()
@@ -127,7 +122,7 @@ class SnowModel:
 
         # Existing snowpack
         if (self.Nsnow > 0):
-            ksnow = self.snow_thermal()
+            #ksnow = snow_thermal()
             # Heat conduction
             for k in range(self.Nsnow):
                 # Areal heat capacity
@@ -452,21 +447,5 @@ class SnowModel:
         return Gsoil, Roff, hs, swe, self.Wflx, self.Sice, self.Sliq, self.Dsnw, self.Rgrn, self.Tsnow, Tsoil, self.Nsnow
     
 
-    def snow_thermal(self):
-        '''
-        Thermal conductivity of snow
-        '''
-        # Here could add routine to create fixed ksnow
-        ksnow = np.zeros(self.Nsnow)
-        ksnow[:] = self.kfix
-        if self.CONDUCT == 1:
-            for k in range(self.Nsnow):
-                self.rhos = self.rhof
-            if self.DENSITY == 1:
-                if (self.Dsnw[k] > self.eps):
-                    self.rhos = (self.Sice[k] + self.Sliq[k]) / self.Dsnw[k]
-                ksnow[k] = 2.224 * (self.rhos / self.rho_wat)**1.885
-                
-        return ksnow
 
         
