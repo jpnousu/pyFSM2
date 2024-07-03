@@ -11,7 +11,7 @@ class Thermal():
         
         constants = Constants()
         layers = Layers()
-        params = Parameters(SETPAR=2, DENSITY=0)
+        params = Parameters(SETPAR=2, DENSITY=1)
         soilprops = SoilProps()
         
         self.kfix = params.kfix
@@ -118,7 +118,6 @@ class Thermal():
         '''
         Ds1 = max(self.Dzsoil[0], Dsnw[0])
         Ts1 = Tsoil[0] + (Tsnow[0] - Tsoil[0])*Dsnw[0]/self.Dzsoil[0]
-        print('ksnow', ksnow)
         ks1 = self.Dzsoil[0]/(2*Dsnw[0]/ksnow[0] + (self.Dzsoil[0] - 2*Dsnw[0])/ksoil[0])
         snd = sum(Dsnw)
         if (snd > 0.5*self.Dzsoil[0]):

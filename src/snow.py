@@ -8,7 +8,7 @@ class SnowModel:
 
         constants = Constants()
         layers = Layers()
-        params = Parameters(SETPAR=2, DENSITY=0)
+        params = Parameters(SETPAR=2, DENSITY=1)
         
         # from Constants
         self.g = constants.g # Acceleration due to gravity (m/s^2)
@@ -107,9 +107,6 @@ class SnowModel:
         self.thetaw = np.zeros(self.Nsmax) # Volumetric liquid water content
         self.theta0 = np.zeros(self.Nsmax) # Liquid water content at start of timestep
         self.Qw = np.zeros(self.Nsmax+1) # Water flux at snow layer boundaruess (m/s)
-
-        # temp
-        self.hs_list = []
     
     def run_timestep(self, dt, drip, Esrf, Gsrf, ksoil, Melt, Rf, Sf, Ta, trans, Tsrf, unload, Tsoil, ksnow):
         '''
@@ -145,8 +142,6 @@ class SnowModel:
                     self.c[k] = - self.Gs[k]*dt
                     self.rhs[k] = self.Gs[k-1]*(self.Tsnow[k-1] - self.Tsnow[k])*dt + self.Gs[k]*(self.Tsnow[k+1] - self.Tsnow[k])*dt 
             k = self.Nsnow - 1
-            print('initial ksnow', ksnow)
-            print('initial ksoil', ksoil)
             self.Gs[k] = 2 / (self.Dsnw[k]/ksnow[k] + self.Dzsoil[0]/ksoil[0])
             self.a[k] = self.c[k-1]
             self.b[k] = self.csnow[k] + (self.Gs[k-1] + self.Gs[k])*dt
@@ -229,7 +224,8 @@ class SnowModel:
                     mass = mass + 0.5*(self.Sice[k] + self.Sliq[k]) 
                     if (self.Dsnw[k] > np.finfo(float).eps):
                         self.rhos = (self.Sice[k] + self.Sliq[k]) / self.Dsnw[k]
-                        self.rhos = self.rhos + (self.rhos*g*mass*dt/(eta0*np.exp(-(self.Tsnow[k] - self.Tm)/12.4 + self.rhos/55.6)) + dt * self.rhos*snda*np.exp((self.Tsnow[k] - self.Tm)/23.8 - max(self.rhos - 150, 0.)/21.7))
+                        self.rhos = self.rhos + (self.rhos*self.g*mass*dt/(self.eta0*np.exp(-(self.Tsnow[k] - self.Tm)/12.4 + self.rhos/55.6)) + 
+                                                 dt * self.rhos*self.snda*np.exp((self.Tsnow[k] - self.Tm)/23.8 - max(self.rhos - 150, 0.)/21.7))
                         self.Dsnw[k] = (self.Sice[k] + self.Sliq[k]) / self.rhos
                     mass = mass + 0.5*(self.Sice[k] + self.Sliq[k])
 
@@ -242,7 +238,6 @@ class SnowModel:
                     else:
                         ggr = 7.3e-8*np.exp(-4600/self.Tsnow[k])
                 self.Rgrn[k] = self.Rgrn[k] + dt * ggr / self.Rgrn[k]
-
         # End if for existing snowpack
 
         # Add snowfall and frost to layer 1 with fresh snow density and grain size
@@ -319,8 +314,6 @@ class SnowModel:
             for kold in range(Nold):
                 while True:
                     if (D[kold] < dnew):
-                        print('kold', kold)
-                        print('knew', knew)
                         # All snow from old layer partially fills new layer
                         self.Rgrn[knew] = self.Rgrn[knew] + S[kold] * R[kold]
                         self.Sice[knew] = self.Sice[knew] + S[kold]
@@ -380,69 +373,62 @@ class SnowModel:
                     self.Sice[k] = self.Sice[k] + dSice
                     self.Tsnow[k] = self.Tsnow[k] + self.Lf*dSice/self.csnow[k]
 
-        '''
+        
         if self.HYDROL == 2: # NOTE THIS NEEDS TESTING!
             # Gravitational drainage 
-            if (np.max(self.Sliq) > 0 | Rf > 0):
+            if (np.max(self.Sliq) > 0) | (Rf > 0):
                 self.Qw[:] = 0
-                self.Qw[0] = Rf/rho_wat
+                self.Qw[0] = Rf/self.rho_wat
                 Roff = 0
                 for k in range(self.Nsnow):
-                    self.ksat[k] = 0.31*(self.rho_wat*self.g/self.mu_wat) * self.Rgrn[k]**2 * np.exp(-7.8 * self.Sice[k]/(rho_wat * self.Dsnw[k]))
+                    self.ksat[k] = 0.31*(self.rho_wat*self.g/self.mu_wat) * self.Rgrn[k]**2 * np.exp(-7.8 * self.Sice[k]/(self.rho_wat * self.Dsnw[k]))
                     self.phi[k] = 1 - self.Sice[k]/(self.rho_ice*self.Dsnw[k])
                     self.thetar[k] = self.Wirr*self.phi[k]
-                    self.thetaw[k] = self.Sliq[k]/(rho_wat*self.Dsnw[k])
+                    self.thetaw[k] = self.Sliq[k]/(self.rho_wat*self.Dsnw[k])
                     if (self.thetaw[k]>self.phi[k]):
-                        Roff = Roff + rho_wat * self.Dsnw[k]*(self.thetaw[k] - self.phi[k])/dt
+                        Roff = Roff + self.rho_wat * self.Dsnw[k]*(self.thetaw[k] - self.phi[k])/dt
                         self.thetaw[k] = self.phi[k]
                 dth = 0.1*dt
                 for i in range(10): # subdivide timestep NOTE CHECK THIS LATER!
                     self.theta0[:] = self.thetaw[:]
                     for j in range(10): # Newton-Raphson iteration
-                        a[:] = 0
-                        b[:] = 1/dth 
+                        self.a[:] = 0
+                        self.b[:] = 1/dth 
                         if (self.thetaw[0] > self.thetar[0]):
-                            b[0] = 1/dth + 3*self.ksat[0]*(self.thetaw[0] - self.thetar[0])**2/(self.phi[0] - self.thetar[0])**3 / self.Dsnw[0]
+                            self.b[0] = 1/dth + 3*self.ksat[0]*(self.thetaw[0] - self.thetar[0])**2/(self.phi[0] - self.thetar[0])**3 / self.Dsnw[0]
                             self.Qw[1] = self.ksat[0]*((self.thetaw[0] - self.thetar[0])/(self.phi[0] - self.thetar[0]))**3
                         self.rhs[0] = (self.thetaw[0] - self.theta0[0])/dth + (self.Qw[1] - self.Qw[0])/self.Dsnw[0]
                         for k in range(1, self.Nsnow):
                             if (self.thetaw[k-1] > self.thetar[k-1]):
-                                a[k] = - 3*self.ksat[k-1]*(self.thetaw[k-1] - self.thetar[k-1])**2/(self.phi[k-1] - self.thetar[k-1])**3 / self.Dsnw[k-1]
+                                self.a[k] = - 3*self.ksat[k-1]*(self.thetaw[k-1] - self.thetar[k-1])**2/(self.phi[k-1] - self.thetar[k-1])**3 / self.Dsnw[k-1]
                             if (self.thetaw[k] > self.thetar[k]):
-                                b[k] = 1/dth + 3*self.ksat[k]*(self.thetaw[k] - self.thetar[k])**2/(self.phi[k] - self.thetar[k])**3 / self.Dsnw[k]
+                                self.b[k] = 1/dth + 3*self.ksat[k]*(self.thetaw[k] - self.thetar[k])**2/(self.phi[k] - self.thetar[k])**3 / self.Dsnw[k]
                                 self.Qw[k+1] = self.ksat[k]*((self.thetaw[k] - self.thetar[k])/(self.phi[k] - self.thetar[k]))**3
                             self.rhs[k] = (self.thetaw[k] - self.theta0[k])/dth + (self.Qw[k+1] - self.Qw[k]) / self.Dsnw[k]
-                        dtheta[0] = - self.rhs[0]/b[0]
+                        self.dtheta[0] = - self.rhs[0]/self.b[0]
                         for k in range(1, self.Nsnow):
-                            dtheta[k] = - (a[k]*dtheta[k-1] + self.rhs[k])/b[k]
+                            self.dtheta[k] = - (self.a[k]*self.dtheta[k-1] + self.rhs[k])/self.b[k]
                         for k in range(self.Nsnow):
-                            self.thetaw[k] = self.thetaw[k] + dtheta[k]
+                            self.thetaw[k] = self.thetaw[k] + self.dtheta[k]
                             if (self.thetaw[k] > self.phi[k]):
                                 self.Qw[k+1] = self.Qw[k+1] + (self.thetaw[k] - self.phi[k]) * self.Dsnw[k]/dth
                                 self.thetaw[k] = self.phi[k]
-                    self.Wflx[:] = self.Wflx[:] + rho_wat*self.Qw[0:self.Nsmax]/10
-                    Roff = Roff + rho_wat*self.Qw[self.Nsnow+1]/10
-                self.Sliq[:] = rho_wat * self.Dsnw[:]*self.thetaw[:]
+                    self.Wflx[:] = self.Wflx[:] + self.rho_wat*self.Qw[0:self.Nsmax]/10
+                    Roff = Roff + self.rho_wat*self.Qw[self.Nsnow]/10
+                self.Sliq[:] = self.rho_wat * self.Dsnw[:]*self.thetaw[:]
                 for k in range(self.Nsnow):
                     self.csnow[k] = self.Sice[k]*self.hcap_ice + self.Sliq[k]*self.hcap_wat
-                    coldcont = self.csnow[k]*(Tm - Tsnow[k])
+                    coldcont = self.csnow[k]*(self.Tm - self.Tsnow[k])
                     if (coldcont > 0): # Liquid can freeze
-                        dSice = min(self.Sliq[k], coldcont/Lf)
+                        dSice = min(self.Sliq[k], coldcont/self.Lf)
                         self.Sliq[k] = self.Sliq[k] - dSice
                         self.Sice[k] = self.Sice[k] + dSice
-                        Tsnow[k] = Tsnow[k] + self.Lf*dSice/self.csnow[k]
-        '''
+                        self.Tsnow[k] = self.Tsnow[k] + self.Lf*dSice/self.csnow[k]
+        
 
         swe = sum(self.Sice[:]) + sum(self.Sliq[:])
 
         # End if existing or new snowpack
-
-        # NOTE SHOULD SAVE RESULTS BETTER!
-        
-        self.hs_list.append(hs)
-        #x_temp = np.arange(0, len(self.hs_list), 1)
-        #plt.plot(x_temp, self.hs_list)
-        #plt.show(x_temp, self.hs_list)
         
         return Gsoil, Roff, hs, swe, self.Wflx, self.Sice, self.Sliq, self.Dsnw, self.Rgrn, self.Tsnow, Tsoil, self.Nsnow
     

@@ -1,57 +1,43 @@
-import numpy as np
-
 #-----------------------------------------------------------------------
-# Surface and vegetation net shortwave radiation
+# Properties of vegetation canopy layers
 #-----------------------------------------------------------------------
 
-from pyFSM2_MODULES import Constants, Layers, Parameters
+use CONSTANTS, only: &
+  hcap_ice            ! Specific heat capacity of ice (J/K/kg)
 
-def SWRAD(alb0, Dsnw, dt, elev, fcans, lveg, Sdif, Sdir, Sf, Tsrf, albs):
-    """
-    Surface and vegetation net shortwave radiation.
+use LAYERS, only: &
+  Ncnpy,             &! Number of canopy layers
+  fvg1                ! Fraction of vegetation in upper canopy layer
 
-    Parameters:
-    - alb0: Snow-free ground albedo
-    - Dsnw: Snow layer thicknesses (m)
-    - dt: Timestep (s)
-    - elev: Solar elevation (radians)
-    - fcans: Canopy layer snowcover fractions
-    - lveg: Canopy layer vegetation area indices
-    - Sdif: Diffuse shortwave radiation (W/m^2)
-    - Sdir: Direct-beam shortwave radiation (W/m^2)
-    - Sf: Snowfall rate (kg/m^2/s)
-    - Tsrf: Snow/ground surface temperature (K)
-    - albs: Snow albedo
-    """
-    
-    
-    # Loop variables
-    alim = 0.0  # Limiting snow albedo
+use PARAMETERS, only: &
+  cvai,              &! Vegetation heat capacity per unit VAI (J/K/m^2)
+  svai                ! Intercepted snow capacity per unit VAI (kg/m^2)
 
-    # ... (Other variable declarations)
+implicit none
 
-    # Prognostic snow albedo
-    tdec = tcld
-    if Tsrf >= Tm:
-        tdec = tmlt
-    alim = (asmn / tdec + asmx * Sf / Salb) / (1 / tdec + Sf / Salb)
-    albs = alim + (albs - alim) * np.exp(-(1 / tdec + Sf / Salb) * dt)
-    albs = max(min(albs, asmx), asmn)
+real, intent(in) :: &
+  Sveg(Ncnpy),       &! Snow mass on vegetation layers (kg/m^2)
+  Tveg(Ncnpy),       &! Vegetation layer temperatures (K)
+  VAI                 ! Vegetation area index
 
-    # Partial snowcover on ground
-    snd = np.sum(Dsnw)
-    fsnow = min(snd / hfsn, 1.0)
-    fsnow = snd / (snd + hfsn)
+real, intent(out) :: &
+  cveg(Ncnpy),       &! Vegetation heat capacities (J/K/m^2)
+  fcans(Ncnpy),      &! Canopy layer snowcover fractions
+  lveg(Ncnpy),       &! Canopy layer vegetation area indices
+  Scap(Ncnpy),       &! Canopy layer snow capacities (kg/m^2)
+  Tveg0(Ncnpy)        ! Vegetation temperatures at start of timestep (K)
 
-    # Surface and vegetation net shortwave radiation
-    asrf = (1 - fsnow) * alb0 + fsnow * albs
-    SWsrf = (1 - asrf) * (Sdif + Sdir)
-    SWveg[:] = 0
-    SWout = asrf * (Sdif + Sdir)
-    SWsub = Sdif + Sdir
-    tdif[:] = 0
-    tdir[:] = 0
-    
-    # ... (Continued translation)
+#if CANMOD == 1
+lveg(1) = VAI
+#endif
+#if CANMOD == 2
+lveg(1) = fvg1*VAI
+lveg(2) = (1 - fvg1)*VAI
+#endif
+cveg(:) = cvai*lveg(:) + hcap_ice*Sveg(:)
+Scap = svai*lveg(:)
+fcans(:) = 0
+if (VAI > epsilon(VAI)) fcans(:) = (Sveg(:)/Scap(:))**0.67
+Tveg0 = Tveg
 
-    return fsnow, SWout, SWsrf, SWsub, SWveg, tdif
+end subroutine CANOPY

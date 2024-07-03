@@ -69,7 +69,7 @@ class SWrad:
         self.rdir = np.zeros(self.Ncnpy)                         # Canopy layer direct-beam reflectance
         self.tdir = np.zeros(self.Ncnpy)                         # Canopy layer direct-beam transmittance
 
-        self.ALBEDO = 1
+        self.ALBEDO = 2
         self.SNFRAC = 1
 
     def run_timestep(self, albs, alb0, dt, elev, Sdif, Sdir, Sf, Tsrf, Dsnw, fcans, lveg):
@@ -84,7 +84,7 @@ class SWrad:
             if (Tsrf >= self.Tm):
                 tdec = self.tmlt
             alim = (self.asmn/tdec + self.asmx*Sf/self.Salb)/(1/tdec + Sf/self.Salb)
-            albs = alim + (albs - alim)*exp(-(1/tdec + Sf/self.Salb)*dt)
+            albs = alim + (albs - alim)*np.exp(-(1/tdec + Sf/self.Salb)*dt)
         albs = max(min(albs,self.asmx),self.asmn)
 
         # Partial snowcover on ground

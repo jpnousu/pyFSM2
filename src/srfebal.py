@@ -2,12 +2,12 @@ import numpy as np
 from pyFSM2_MODULES import Constants, Layers, Parameters
 from utils import ludcmp
 
-class SebModel:
+class SrfebalModel:
     def __init__(self):
 
         constants = Constants()
         layers = Layers()
-        params = Parameters(SETPAR=2, DENSITY=0)
+        params = Parameters(SETPAR=2, DENSITY=1)
 
         # From Constants
         self.cp = constants.cp # Specific heat capacity of air (J/K/kg)
