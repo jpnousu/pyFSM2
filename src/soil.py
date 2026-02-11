@@ -65,7 +65,8 @@ class SoilModel:
 
         for k in range(self.Nsoil):
             Tsoil[k] = Tsoil[k] + self.dTs[k]
-
+        
+        #print('Tsoil[0]', Tsoil[0])
         return Tsoil
 
 

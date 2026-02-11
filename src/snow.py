@@ -1,7 +1,11 @@
+#-----------------------------------------------------------------------
+# Snow thermodynamics and hydrology
+#-----------------------------------------------------------------------
+
 import numpy as np
 from pyFSM2_MODULES import Constants, Layers, Parameters
 from utils import tridiag
-import matplotlib.pyplot as plt
+epsillon = np.finfo(float).eps
 
 class SnowModel:
     def __init__(self):
@@ -43,12 +47,7 @@ class SnowModel:
         self.HYDROL = 1 # NOTE THIS NEEDS TO COME FROM THE NAMELIST!
         self.CONDUCT = 1
         self.DENSITY = 1
-
-        # dt should come in
-        # dt # timestep (s)
-        
-        self.eps = np.finfo(float).eps
-        
+                
         # Model state variables (in/out)
         self.Nsnow = np.zeros(1) # Number of snow layers
         self.Dsnw = np.zeros(self.Nsmax) # Snow layer thicknesses (m)
@@ -202,12 +201,12 @@ class SnowModel:
             if self.DENSITY == 0:
                 # Fixed snow density
                 for k in range(self.Nsnow):
-                    if (self.Dsnw[k] > self.eps):
+                    if (self.Dsnw[k] > epsillon):
                         self.Dsnw[k] = (self.Sice[k] + self.Sliq[k]) / rfix
             if self.DENSITY == 1:
                 # Snow compaction with age
                 for k in range(self.Nsnow):
-                    if self.Dsnw[k] > self.eps: # epsillon different in FSM
+                    if self.Dsnw[k] > epsillon: # epsillon different in FSM
                         self.rhos = (self.Sice[k] + self.Sliq[k]) / self.Dsnw[k]
                         if self.Tsnow[k] >= self.Tm:
                             if self.rhos < self.rmlt:
@@ -246,7 +245,7 @@ class SnowModel:
             Esnow = Esrf
         dSice = (Sf - Esnow)*dt
         self.Dsnw[0] = self.Dsnw[0] + dSice / self.rhof
-        if (self.Sice[0] + dSice > self.eps):
+        if (self.Sice[0] + dSice > epsillon):
             self.Rgrn[0] = (self.Sice[0]*self.Rgrn[0] + dSice*self.rgr0) / (self.Sice[0] + dSice)
         self.Sice[0] = self.Sice[0] + dSice
     
@@ -254,10 +253,10 @@ class SnowModel:
         self.rhos = self.rhof
         swe = sum(self.Sice[:]) + sum(self.Sliq[:])
         hs = sum(self.Dsnw[:])
-        if (hs > self.eps):
+        if (hs > epsillon):
             self.rhos = swe / hs
         self.Dsnw[0] = self.Dsnw[0] + unload / self.rhos
-        if (self.Sice[0] + unload > self.eps):
+        if (self.Sice[0] + unload > epsillon):
             self.Rgrn[0] = (self.Sice[0]*self.Rgrn[0] + unload*self.rgr0) / (self.Sice[0] + unload)
         self.Sice[0] = self.Sice[0] + unload
 
@@ -313,6 +312,9 @@ class SnowModel:
             dnew = self.Dsnw[0]
             for kold in range(Nold):
                 while True:
+                    # Ensure we don't try to access out-of-bounds indices
+                    if knew > self.Nsnow-1:
+                        break  # Exit the loop if we've reached the maximum number of new layers
                     if (D[kold] < dnew):
                         # All snow from old layer partially fills new layer
                         self.Rgrn[knew] = self.Rgrn[knew] + S[kold] * R[kold]
@@ -427,7 +429,7 @@ class SnowModel:
         
 
         swe = sum(self.Sice[:]) + sum(self.Sliq[:])
-
+        Gsoil = float(Gsoil)
         # End if existing or new snowpack
         
         return Gsoil, Roff, hs, swe, self.Wflx, self.Sice, self.Sliq, self.Dsnw, self.Rgrn, self.Tsnow, Tsoil, self.Nsnow

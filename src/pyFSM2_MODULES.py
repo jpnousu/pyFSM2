@@ -43,7 +43,7 @@ class IOUnits:
 # Canopy, snow, and soil layers
 class Layers:
     def __init__(self):    
-        self.Ncnpy = 1  # Number of canopy layers
+        self.Ncnpy = 0  # Number of canopy layers
         self.Nsmax = 3  # Maximum number of snow layers
         self.Nsoil = 3  # Number of soil layers
         self.Dzsnow = np.array([0.1, 0.2, 0.4]) # Minimum snow layer thicknesses (m)

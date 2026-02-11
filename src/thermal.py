@@ -5,6 +5,7 @@
 import numpy as np
 from pyFSM2_MODULES import Constants, Layers, Parameters, SoilProps
 import matplotlib.pyplot as plt
+epsilon = np.finfo(float).eps
 
 class Thermal():
     def __init__(self):
@@ -57,8 +58,6 @@ class Thermal():
         self.CONDUCT = 1
         self.DENSITY = 1
 
-        self.eps = np.finfo(float).eps
-
 
     def run_timestep(self, Nsnow, Dsnw, Sice, Sliq, Tsnow, Tsoil, Vsmc):
         '''
@@ -74,7 +73,7 @@ class Thermal():
             for k in range(int(Nsnow)):
                 self.rhos = self.rhof
                 if self.DENSITY == 1:
-                    if (Dsnw[k] > self.eps):
+                    if (Dsnw[k] > epsilon):
                         self.rhos = (Sice[k] + Sliq[k]) / Dsnw[k]
                 ksnow[k] = 2.224 * (self.rhos / self.rho_wat)**1.885
 
@@ -86,7 +85,7 @@ class Thermal():
         for k in range(self.Nsoil):
             csoil[k] = self.hcap_soil*self.Dzsoil[k]
             ksoil[k] = self.hcon_soil
-            if (Vsmc[k] > self.eps):
+            if (Vsmc[k] > epsilon):
                 dthudT = 0
                 sthu = Vsmc[k]
                 sthf = 0
@@ -119,11 +118,15 @@ class Thermal():
         Ds1 = max(self.Dzsoil[0], Dsnw[0])
         Ts1 = Tsoil[0] + (Tsnow[0] - Tsoil[0])*Dsnw[0]/self.Dzsoil[0]
         ks1 = self.Dzsoil[0]/(2*Dsnw[0]/ksnow[0] + (self.Dzsoil[0] - 2*Dsnw[0])/ksoil[0])
-        snd = sum(Dsnw)
-        if (snd > 0.5*self.Dzsoil[0]):
+        hs = sum(Dsnw)
+        if (hs > 0.5*self.Dzsoil[0]):
             ks1 = ksnow[0]
-        if (snd > self.Dzsoil[0]):
+        if (hs > self.Dzsoil[0]):
             Ts1 = Tsnow[0]
+
+        #print('ks1', ks1)
+        #print('ksnow[0]', ksnow[0])
+        #print('ksoil[0]', ksoil[0])
         
         return Ds1, gs1, ks1, Ts1, csoil, ksnow, ksoil
 
